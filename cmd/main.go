@@ -22,12 +22,9 @@ func main() {
 	ticker := time.NewTicker(time.Duration(interval) * time.Minute)
 	defer ticker.Stop()
 
-	// 无限循环，保持程序运行
-	for {
-		select {
-		case <-ticker.C:
-			updateDNS(client)
-		}
+	// 使用 for range 循环来处理 ticker
+	for range ticker.C {
+		updateDNS(client)
 	}
 }
 
