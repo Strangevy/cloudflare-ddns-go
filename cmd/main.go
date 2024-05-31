@@ -16,13 +16,18 @@ func main() {
 
 	interval := getIntervalFromEnv("INTERVAL_MINUTES", 5)
 
+	// 立即执行一次 DNS 更新
 	updateDNS(client)
 
 	ticker := time.NewTicker(time.Duration(interval) * time.Minute)
 	defer ticker.Stop()
 
-	for range ticker.C {
-		updateDNS(client)
+	// 无限循环，保持程序运行
+	for {
+		select {
+		case <-ticker.C:
+			updateDNS(client)
+		}
 	}
 }
 

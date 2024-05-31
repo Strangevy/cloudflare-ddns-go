@@ -21,9 +21,11 @@
 使用以下命令启动 `cloudflare-ddns-go` 容器：
 
 ```bash
-docker run -e CF_API_TOKEN=YOUR_CF_API_TOKEN \
+docker run --name cloudflare-ddns-go \
+           -e CF_API_TOKEN=YOUR_CF_API_TOKEN \
            -e CF_DOMAIN_NAME=YOUR_CF_DOMAIN_NAME \
            -e CF_SUBDOMAIN_NAME=YOUR_CF_SUBDOMAIN_NAME \
+           -e INTERVAL_MINUTES=5 \
            strangevy/cloudflare-ddns-go:latest
 ```
 请将 YOUR_CF_API_TOKEN、YOUR_CF_DOMAIN_NAME 和 YOUR_CF_SUBDOMAIN_NAME 替换为你的实际 Cloudflare API 令牌、域名和子域名。
@@ -33,3 +35,4 @@ docker run -e CF_API_TOKEN=YOUR_CF_API_TOKEN \
 - CF_API_TOKEN：你的 Cloudflare API 令牌。
 - CF_DOMAIN_NAME：你想要更新的域名。
 - CF_SUBDOMAIN_NAME：你想要更新的子域名。
+- INTERVAL_MINUTES：定时执行频率，默认5（分钟）
