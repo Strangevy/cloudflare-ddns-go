@@ -22,7 +22,6 @@ type DNSRecord struct {
 	Type    string `json:"type"`
 	Name    string `json:"name"`
 	Content string `json:"content"`
-	TTL     int    `json:"ttl"`
 }
 
 type DNSRecordResponse struct {
@@ -119,7 +118,6 @@ func UpdateDNSRecord(cfClient *client.CloudflareClient, config *env.Config, zone
 		Type:    "A",
 		Name:    config.Subdomain + "." + config.Domain,
 		Content: ip,
-		TTL:     120,
 	}
 	err = postDNSRecord(cfClient, zoneID, newRecord)
 	if err != nil {
