@@ -33,6 +33,6 @@ docker run --name cloudflare-ddns-go \
 ### 环境变量
 
 - CF_API_TOKEN：你的 Cloudflare API 令牌。
-- CF_DOMAIN_NAME：你想要更新的域名。
-- CF_SUBDOMAIN_NAME：你想要更新的子域名。
+- CF_DOMAIN_NAME：你想要更新的域名。如：example.com
+- CF_SUBDOMAIN_NAME：你想要更新的子域名。如：sub，那你最终的解析的域名就是sub.example.com
 - INTERVAL_MINUTES：定时执行频率，默认5（分钟）

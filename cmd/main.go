@@ -1,86 +1,50 @@
 package main
 
 import (
-	"cloudflare-ddns-go/pkg"
+	"cloudflare-ddns-go/pkg/client"
+	"cloudflare-ddns-go/pkg/dns"
+	"cloudflare-ddns-go/pkg/env"
+	"cloudflare-ddns-go/pkg/http"
 	"log"
-	"os"
-	"strconv"
 	"time"
 )
 
+var cachedZoneID string
+
 func main() {
-	client, err := pkg.InitClient()
-	if err != nil {
-		log.Fatalf("Failed to initialize client: %v", err)
+	config := env.LoadConfig()
+	if config == nil {
+		log.Fatal("Failed to load configuration")
 	}
 
-	interval := getIntervalFromEnv("INTERVAL_MINUTES", 5)
+	cfClient := client.NewCloudflareClient(config)
 
-	// 立即执行一次 DNS 更新
-	updateDNS(client)
-
-	ticker := time.NewTicker(time.Duration(interval) * time.Minute)
-	defer ticker.Stop()
-
-	// 使用 for range 循环来处理 ticker
-	for range ticker.C {
-		updateDNS(client)
-	}
-}
-
-func getIntervalFromEnv(envVar string, defaultVal int) int {
-	valStr := os.Getenv(envVar)
-	if valStr == "" {
-		return defaultVal
-	}
-
-	val, err := strconv.Atoi(valStr)
-	if err != nil {
-		log.Printf("Invalid value for %s, using default: %d minutes. Error: %v", envVar, defaultVal, err)
-		return defaultVal
-	}
-
-	return val
-}
-
-func updateDNS(client *pkg.CloudflareClient) {
-	ip, err := pkg.GetExternalIP(client.HTTPClient)
-	if err != nil {
-		log.Printf("Failed to get external IP: %v", err)
-		return
-	}
-
-	zoneID, err := client.GetZoneID()
-	if err != nil {
-		log.Printf("Failed to get zone ID: %v", err)
-		return
-	}
-
-	record, err := client.GetRecord(zoneID)
-	if err != nil {
-		log.Printf("Failed to get record: %v", err)
-		return
-	}
-
-	handleDNSRecord(client, zoneID, record, ip)
-	log.Printf("Current DDNS HOST:%s, IP:%s", client.SubdomainName, ip)
-}
-
-func handleDNSRecord(client *pkg.CloudflareClient, zoneID string, record *pkg.DNSRecord, ip string) {
-	if record == nil {
-		log.Printf("Record not found, creating a new one...")
-		if recordID, err := client.CreateDNSRecord(zoneID, ip); err != nil {
-			log.Printf("Failed to create DNS record: %v", err)
-		} else {
-			log.Printf("New Record ID: %s", recordID)
+	for {
+		currentIP, err := http.GetCurrentIP()
+		if err != nil {
+			log.Fatalf("Failed to get current IP: %v", err)
 		}
-	} else if record.Content == ip {
-		log.Printf("IP hasn't changed. ip: %s", ip)
-	} else {
-		if err := client.UpdateDNSRecord(zoneID, record.ID, ip); err != nil {
-			log.Printf("Failed to update DNS record: %v", err)
-		} else {
-			log.Printf("DNS record updated successfully.")
+
+		if cachedZoneID == "" {
+			cachedZoneID, err = dns.GetZoneID(cfClient, config.Domain)
+			if err != nil {
+				log.Fatalf("Failed to get Zone ID: %v", err)
+			}
 		}
+
+		status, oldIP, newIP, err := dns.UpdateDNSRecord(cfClient, config, cachedZoneID, currentIP)
+		if err != nil {
+			log.Fatalf("Failed to update DNS record: %v", err)
+		}
+
+		if status == "no_change" {
+			log.Printf("No change needed. Current IP: %s, Domain: %s.%s\n", currentIP, config.Subdomain, config.Domain)
+		} else if status == "updated" {
+			log.Printf("Updated DNS record. Domain: %s.%s, Old IP: %s, New IP: %s\n", config.Subdomain, config.Domain, oldIP, newIP)
+		} else if status == "created" {
+			log.Printf("Created new DNS record. Domain: %s.%s, IP: %s\n", config.Subdomain, config.Domain, newIP)
+		}
+
+		time.Sleep(time.Duration(config.Interval) * time.Minute)
 	}
 }
