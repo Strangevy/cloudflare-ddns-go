@@ -55,7 +55,6 @@ func updateDNS(client *pkg.CloudflareClient) {
 		log.Printf("Failed to get zone ID: %v", err)
 		return
 	}
-	log.Printf("Zone ID: %s", zoneID)
 
 	record, err := client.GetRecord(zoneID)
 	if err != nil {
