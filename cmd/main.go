@@ -22,7 +22,7 @@ func main() {
 	for {
 		currentIP, err := http.GetCurrentIP()
 		if err != nil {
-			log.Fatalf("Failed to get current IP: %v", err)
+			log.Printf("Failed to get current IP: %v", err)
 		}
 
 		if cachedZoneID == "" {
@@ -34,7 +34,7 @@ func main() {
 
 		status, oldIP, newIP, err := dns.UpdateDNSRecord(cfClient, config, cachedZoneID, currentIP)
 		if err != nil {
-			log.Fatalf("Failed to update DNS record: %v", err)
+			log.Printf("Failed to update DNS record: %v", err)
 		}
 
 		if status == "no_change" {
